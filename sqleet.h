@@ -1,3 +1,7 @@
+#ifndef SQLITE_HAS_CODEC
+#define SQLITE_HAS_CODEC 1
+#endif
+
 /*
 ** 2001-09-15
 **
