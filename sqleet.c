@@ -19,6 +19,14 @@
 #define SKIP_HEADER_BYTES 0
 #endif
 
+#if _WIN32 && !defined(SQLITE_API)
+#define SQLITE_API __declspec(dllexport)
+#endif
+
+#if defined(_USRDLL) && !defined(SQLITE_ENABLE_COLUMN_METADATA)
+#define SQLITE_ENABLE_COLUMN_METADATA 1
+#endif
+
 #include "sqlite3.c"
 #include "rekeyvacuum.c"
 #include "crypto.c"
