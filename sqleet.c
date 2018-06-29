@@ -43,6 +43,13 @@ typedef struct codec {
     int nKey;
 } Codec;
 
+void* key_dup(const void* zKey, int nKey)
+{
+	void* key = sqlite3_malloc(nKey);
+	memcpy(key, zKey, nKey);
+	return key;
+}
+
 Codec *codec_new(const char *zKey, int nKey)
 {
     Codec *codec;
@@ -52,7 +59,9 @@ Codec *codec_new(const char *zKey, int nKey)
         memset(codec->salt, 0, sizeof(codec->salt));
         codec->pagebuf = NULL;
         codec->pagesize = 0;
-        codec->zKey = zKey;
+		codec->zKey = 0;
+		if (zKey && nKey > 0)
+			codec->zKey = key_dup(zKey, nKey);
         codec->nKey = nKey;
     }
     return codec;
@@ -74,7 +83,9 @@ void codec_kdf(Codec *codec)
 {
     pbkdf2_hmac_sha256(codec->zKey, codec->nKey, codec->salt, 16, 12345,
                        codec->key, 32);
-    while (codec->nKey) ((volatile char *)codec->zKey)[--codec->nKey] = '\0';
+    while (codec->nKey)
+		((volatile char *)codec->zKey)[--codec->nKey] = '\0';
+	sqlite3_free(codec->zKey);
     codec->zKey = NULL;
 }
 
@@ -87,7 +98,7 @@ void codec_free(void *pcodec)
         if (codec->zKey) {
             p = (void *)codec->zKey;
             for (i = 0; i < codec->nKey; p[i++] = '\0');
-            /* zKey memory is allocated by the user */
+			sqlite3_free(codec->zKey);
         }
         if (codec->pagebuf) {
             p = codec->pagebuf;
